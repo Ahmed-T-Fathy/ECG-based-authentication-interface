@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import helpers
 import read_data
 
-signals, labels = read_data.read_data('./Data sets/*', 1500)
+signals, labels = read_data.read_data('./Data sets 2/*', 1500)
 
 # preprocessing
 preprocessed_signals = helpers.data_preprocessing(signals, 1, 40, 500, 4)
@@ -36,13 +36,15 @@ print('True:', y_test)
 accuracy=clf.score(X_test,y_test)
 print('Accuracy :', accuracy)
 
-plt.figure(figsize=(18, 6))
+plt.figure(figsize=(12, 4))
 plt.subplot(131)
 plt.plot(signals[0])
 plt.subplot(132)
 plt.plot(preprocessed_signals[0])
+plt.title("Accuracy :"+str(accuracy))
 plt.subplot(133)
 plt.plot(filtered_signals[0])
+
 plt.show()
 
 # print((filtered_signals))

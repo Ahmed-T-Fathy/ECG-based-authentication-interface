@@ -12,7 +12,7 @@ def get_DCT(signal, No_sampels):
     AC = sm.tsa.acf(signal, nlags=No_sampels)
     sig = AC[0:300]
     DCT = scipy.fftpack.dct(sig, type=2)
-    return DCT
+    return DCT[0:100]
 
 
 def butter_band_pass_filter(input_signal, low_cutoff, high_cutoff, sampling_rate, order):
