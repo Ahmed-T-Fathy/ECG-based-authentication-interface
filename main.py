@@ -20,6 +20,8 @@ encodedData = LabelEncoder.fit_transform(labels)
 # feature extraction
 filtered_signals = helpers.extract_features(preprocessed_signals, 1500)
 
+qrs=helpers.QRS_Features(signals[0])
+
 # split data
 X_train, X_test, y_train, y_test = train_test_split(filtered_signals, encodedData, test_size=0.2,shuffle=True)
 

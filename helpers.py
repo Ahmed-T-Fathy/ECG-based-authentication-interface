@@ -6,6 +6,7 @@ from scipy.signal import butter, filtfilt
 import scipy
 import statsmodels.api as sm
 import heartpy as hp
+import biosppy.signals.ecg as ecg
 
 
 def get_DCT(signal, No_sampels):
@@ -24,6 +25,21 @@ def butter_band_pass_filter(input_signal, low_cutoff, high_cutoff, sampling_rate
     filtered = filtfilt(numerator, denominator, input_signal)
     return filtered
 
+# def butter_lowpass_filter(input_signal, low_cutoff, sampling_rate, order):
+#     nyqRate = 0.5 * sampling_rate
+#     normal_cutoff = low_cutoff / nyqRate
+#     # Get the filter coefficients
+#     numerator, denominator = butter(order, normal_cutoff, btype='low', analog=False)
+#     y = filtfilt(numerator, denominator, input_signal)
+#     return y
+#
+# def butter_highpass_filter(input_signal, high_cutoff, sampling_rate, order):
+#     nyqRate = 0.5 * sampling_rate
+#     normal_cutoff = high_cutoff / nyqRate
+#     # Get the filter coefficients
+#     numerator, denominator = butter(order, normal_cutoff, btype='high', analog=False)
+#     y = filtfilt(numerator, denominator, input_signal)
+#     return y
 
 def data_preprocessing(signals, low_cutoff, high_cutoff, sampling_rate, order):
     preprocessed = []
@@ -40,6 +56,51 @@ def data_preprocessing(signals, low_cutoff, high_cutoff, sampling_rate, order):
         preprocessed.append(preSig)
     return preprocessed
 
+def winIntegration(signal,samplingRate):
+    window=int(0.08*int(samplingRate))
+    integWindow=np.ones(window)/window
+    signal=signal.reshape((-1,))
+    integratedSignal=np.convolve(signal,integWindow,mode='same')
+    return integratedSignal
+
+def QRS_Features(signal):
+    lowCut=1.0
+    highCut=40.0
+    samplingRate=500.0
+
+    #1- Band Pass Filter
+    lowHighPass_Signal=butter_band_pass_filter(signal,lowCut,highCut,samplingRate,1)
+    #2- Differentation
+    differentation_Signal=np.diff(lowHighPass_Signal)
+    #3- Squaring
+    squaring_Signal=differentation_Signal**2
+    #4- Moving Window integration
+    intergratedSingal=winIntegration(squaring_Signal, samplingRate)
+    #5- Trsehsold
+    threshold=0.3*np.max(intergratedSingal)
+    listThreshold=np.where(intergratedSingal>threshold)[0]
+
+    R=[]
+    windowPeriod=int(0.2*samplingRate)
+    for i in listThreshold:
+        if(intergratedSingal[i]>intergratedSingal[i-1] and intergratedSingal[i]>intergratedSingal[i+1]):
+            if(len(R)==0 or (i-R[-1]>windowPeriod)):
+                R.append(i)
+
+    qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
+
+    time=np.arange(len(lowHighPass_Signal))/samplingRate
+    plt.figure(figsize=(12, 6))
+    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    plt.plot(time[R], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.title('ECG Signal with R Peaks')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+    return R
 
 def extract_features(signals, No_of_sampels):
     feature_extracted = []
