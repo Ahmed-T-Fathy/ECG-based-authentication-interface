@@ -69,7 +69,7 @@ def QRS_Features(signal):
     samplingRate=500.0
 
     #1- Band Pass Filter
-    lowHighPass_Signal=butter_band_pass_filter(signal,lowCut,highCut,samplingRate,1)
+    lowHighPass_Signal=butter_band_pass_filter(signal,lowCut,highCut,samplingRate,6)
     #2- Differentation
     differentation_Signal=np.diff(lowHighPass_Signal)
     #3- Squaring
@@ -88,22 +88,33 @@ def QRS_Features(signal):
                 R.append(i)
 
     qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
+    qrs_result=np.array(qrs_result).reshape(-1,)
+    # time=np.arange(len(lowHighPass_Signal))/samplingRate
+    # plt.figure(figsize=(12, 6))
+    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    # plt.plot(time[qrs_result], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Amplitude')
+    # plt.title('ECG Signal with R Peaks')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
-    time=np.arange(len(lowHighPass_Signal))/samplingRate
-    plt.figure(figsize=(12, 6))
-    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    plt.plot(time[R], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.title('ECG Signal with R Peaks')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    qrsFeatures=[]
+    for i in qrs_result:
+        # start=max(0,i-50)
+        # end=min(len(lowHighPass_Signal),i+50+1)
+        window=lowHighPass_Signal[i-25:i+25]
+        qrsFeatures.append(window)
+    # qrsFeatures=np.array(qrsFeatures)
+    return qrsFeatures
 
-    return R
-
-def extract_features(signals, No_of_sampels):
+def extract_features(signals, No_of_sampels,type):
     feature_extracted = []
-    for signal in signals:
-        feature_extracted.append(get_DCT(signal, No_of_sampels))
+    if type==1:
+        for signal in signals:
+            feature_extracted.append(get_DCT(signal, No_of_sampels))
+    elif type==2:
+        for signal in signals:
+            feature_extracted.append(QRS_Features(signal))
     return feature_extracted

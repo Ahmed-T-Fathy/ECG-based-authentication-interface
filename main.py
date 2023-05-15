@@ -18,7 +18,7 @@ LabelEncoder = preprocessing.LabelEncoder()
 encodedData = LabelEncoder.fit_transform(labels)
 
 # feature extraction
-filtered_signals = helpers.extract_features(preprocessed_signals, 1500)
+filtered_signals = helpers.extract_features(signals, 1500,2)
 
 qrs=helpers.QRS_Features(signals[0])
 
