@@ -85,29 +85,37 @@ def QRS_Features(signal):
     for i in listThreshold:
         if(intergratedSingal[i]>intergratedSingal[i-1] and intergratedSingal[i]>intergratedSingal[i+1]):
             if(len(R)==0 or (i-R[-1]>windowPeriod)):
-                R.append(i)
+                R.append(i+1)
 
     qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
-    qrs_result=np.array(qrs_result).reshape(-1,)
+
+    #Plotting
+    # qrs_result=np.array(qrs_result).reshape(-1,)
     # time=np.arange(len(lowHighPass_Signal))/samplingRate
     # plt.figure(figsize=(12, 6))
+    # plt.subplot(121)
+    # plt.title("QRS Algorithm - Khaled")
+    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    # plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Amplitude')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.subplot(122)
+    # plt.title("QRS Algorithm - Library")
     # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
     # plt.plot(time[qrs_result], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
     # plt.xlabel('Time (s)')
     # plt.ylabel('Amplitude')
-    # plt.title('ECG Signal with R Peaks')
     # plt.legend()
     # plt.grid(True)
     # plt.show()
 
-    qrsFeatures=[]
-    for i in qrs_result:
-        # start=max(0,i-50)
-        # end=min(len(lowHighPass_Signal),i+50+1)
-        window=lowHighPass_Signal[i-25:i+25]
-        qrsFeatures.append(window)
-    # qrsFeatures=np.array(qrsFeatures)
-    return qrsFeatures
+    RR_Features=[]
+    for i in range(len(qrs_result)-1):
+        RR_Features.append(qrs_result[i+1]-qrs_result[i])
+    RR_Features=np.array(RR_Features)
+    return RR_Features
 
 def extract_features(signals, No_of_sampels,type):
     feature_extracted = []
