@@ -22,12 +22,46 @@ filtered_signals = helpers.extract_features(signals, 1500,2)
 
 qrs=helpers.QRS_Features(signals[6])
 
+
+encodedData=encodedData.tolist()
+for i in range(len(filtered_signals)):
+    if(i==len(filtered_signals)):
+        break
+    if(len(filtered_signals[i])==0):
+        encodedData.remove(encodedData[i])
+        # filtered_signals.remove(filtered_signals[i])
+    else:
+        filtered_signals[i]=filtered_signals[i][0:2]
+
+for i in range(len(filtered_signals)):
+    if(i==len(filtered_signals)):
+        break
+    if(len(filtered_signals[i])==0):
+        filtered_signals.remove(filtered_signals[i])
+
+
 # split data
 X_train, X_test, y_train, y_test = train_test_split(filtered_signals, encodedData, test_size=0.2,shuffle=True)
 
 # train svm model
 clf = svm.SVC(kernel='poly',degree=3, C=1)
+
+
+# yTrain=[]
+# for i in range(len(y_train)):
+#     if(len(X_train[i])==3):
+#         yTrain.append(y_train[i])
+#
+# X_train=[x for x in X_train if len(x)==3]
+# y_train=yTrain
+#
+# xTrain=[]
+
+
+
 clf.fit(X_train, y_train)
+
+
 prediction =clf.predict(X_test)
 
 print('prediction:', prediction)

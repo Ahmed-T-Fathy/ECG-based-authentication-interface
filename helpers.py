@@ -88,7 +88,7 @@ def QRS_Features(signal):
                 R.append(i+1)
 
     qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
-
+    qrs_result=np.array(qrs_result).reshape(-1,)
     #Plotting
     # qrs_result=np.array(qrs_result).reshape(-1,)
     # time=np.arange(len(lowHighPass_Signal))/samplingRate
@@ -115,6 +115,8 @@ def QRS_Features(signal):
     for i in range(len(qrs_result)-1):
         RR_Features.append(qrs_result[i+1]-qrs_result[i])
     RR_Features=np.array(RR_Features)
+
+
     return RR_Features
 
 def extract_features(signals, No_of_sampels,type):
