@@ -57,9 +57,8 @@ def data_preprocessing(signals, low_cutoff, high_cutoff, sampling_rate, order):
     return preprocessed
 
 def winIntegration(signal,samplingRate):
-    window=int(0.08*int(samplingRate))
+    window=int(0.079*int(samplingRate))
     integWindow=np.ones(window)/window
-    signal=signal.reshape((-1,))
     integratedSignal=np.convolve(signal,integWindow,mode='same')
     return integratedSignal
 
@@ -68,48 +67,64 @@ def QRS_Features(signal):
     highCut=40.0
     samplingRate=500.0
 
+    signal=(signal-np.mean(signal))/np.std(signal)
     #1- Band Pass Filter
-    lowHighPass_Signal=butter_band_pass_filter(signal,lowCut,highCut,samplingRate,6)
+    lowHighPass_Signal=butter_band_pass_filter(signal,lowCut,highCut,samplingRate,1)
     #2- Differentation
-    differentation_Signal=np.diff(lowHighPass_Signal)
+    differentation_Signal=np.gradient(lowHighPass_Signal)
     #3- Squaring
-    squaring_Signal=differentation_Signal**2
+    squaring_Signal=np.square(differentation_Signal)
     #4- Moving Window integration
     intergratedSingal=winIntegration(squaring_Signal, samplingRate)
     #5- Trsehsold
-    threshold=0.3*np.max(intergratedSingal)
-    listThreshold=np.where(intergratedSingal>threshold)[0]
+    R = scipy.signal.find_peaks(intergratedSingal, height=np.mean(intergratedSingal), distance=0.2 * samplingRate)[0]
 
-    R=[]
-    windowPeriod=int(0.2*samplingRate)
-    for i in listThreshold:
-        if(intergratedSingal[i]>intergratedSingal[i-1] and intergratedSingal[i]>intergratedSingal[i+1]):
-            if(len(R)==0 or (i-R[-1]>windowPeriod)):
-                R.append(i+1)
+    def R_correction(signal, peaks):
+
+        peaks_corrected_list = []
+        for index in range(peaks.shape[0]):
+            peak = peaks[index] #Peak
+            if peak - 1 < 0:
+                break
+            if signal[peak] < signal[peak - 1]:
+                while signal[peak] < signal[peak - 1]:
+                    peak -= 1
+                    if peak < 0:
+                        break
+            elif signal[peak] < signal[peak + 1]:
+                while signal[peak] < signal[peak + 1]:
+                    peak += 1
+                    if peak < 0:
+                        break
+            peaks_corrected_list.append(peak)
+        return np.asarray(peaks_corrected_list)
+
+    R=R_correction(lowHighPass_Signal,R)
 
     qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
     qrs_result=np.array(qrs_result).reshape(-1,)
+
     #Plotting
-    # qrs_result=np.array(qrs_result).reshape(-1,)
-    # time=np.arange(len(lowHighPass_Signal))/samplingRate
-    # plt.figure(figsize=(12, 6))
-    # plt.subplot(121)
-    # plt.title("QRS Algorithm - Khaled")
-    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    # plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.subplot(122)
-    # plt.title("QRS Algorithm - Library")
-    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    # plt.plot(time[qrs_result], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    qrs_result=np.array(qrs_result).reshape(-1,)
+    time=np.arange(len(lowHighPass_Signal))/samplingRate
+    plt.figure(figsize=(12, 6))
+    plt.subplot(121)
+    plt.title("QRS Algorithm - Khaled")
+    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.subplot(122)
+    plt.title("QRS Algorithm - Library")
+    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    plt.plot(time[s_wave_peaks], lowHighPass_Signal[s_wave_peaks], 'ro', label='R Peaks')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
     RR_Features=[]
     for i in range(len(qrs_result)-1):

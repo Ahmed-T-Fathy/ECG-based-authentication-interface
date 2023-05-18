@@ -18,26 +18,26 @@ LabelEncoder = preprocessing.LabelEncoder()
 encodedData = LabelEncoder.fit_transform(labels)
 
 # feature extraction
-filtered_signals = helpers.extract_features(signals, 1500,2)
+filtered_signals = helpers.extract_features(preprocessed_signals, 1500,1)
 
 qrs=helpers.QRS_Features(signals[6])
 
 
-encodedData=encodedData.tolist()
-for i in range(len(filtered_signals)):
-    if(i==len(filtered_signals)):
-        break
-    if(len(filtered_signals[i])==0):
-        encodedData.remove(encodedData[i])
-        # filtered_signals.remove(filtered_signals[i])
-    else:
-        filtered_signals[i]=filtered_signals[i][0:2]
-
-for i in range(len(filtered_signals)):
-    if(i==len(filtered_signals)):
-        break
-    if(len(filtered_signals[i])==0):
-        filtered_signals.remove(filtered_signals[i])
+# encodedData=encodedData.tolist()
+# for i in range(len(filtered_signals)):
+#     if(i==len(filtered_signals)):
+#         break
+#     if(len(filtered_signals[i])==0):
+#         encodedData.remove(encodedData[i])
+#         # filtered_signals.remove(filtered_signals[i])
+#     else:
+#         filtered_signals[i]=filtered_signals[i][0:2]
+#
+# for i in range(len(filtered_signals)):
+#     if(i==len(filtered_signals)):
+#         break
+#     if(len(filtered_signals[i])==0):
+#         filtered_signals.remove(filtered_signals[i])
 
 
 # split data
@@ -71,6 +71,8 @@ print('True:', y_test)
 
 accuracy=clf.score(X_test,y_test)
 print('Accuracy :', accuracy)
+
+
 
 plt.figure(figsize=(12, 4))
 plt.subplot(131)
