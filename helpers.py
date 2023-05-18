@@ -119,7 +119,7 @@ def QRS_Features(signal):
     plt.subplot(122)
     plt.title("QRS Algorithm - Library")
     plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    plt.plot(time[s_wave_peaks], lowHighPass_Signal[s_wave_peaks], 'ro', label='R Peaks')
+    plt.plot(time[qrs_result], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
     plt.xlabel('Time (s)')
     plt.ylabel('Amplitude')
     plt.legend()
