@@ -20,7 +20,7 @@ encodedData = LabelEncoder.fit_transform(labels)
 # feature extraction
 filtered_signals = helpers.extract_features(preprocessed_signals, 1500,1)
 
-qrs=helpers.QRS_Features(signals[6])
+qrs=helpers.QRS_Features(signals[0])
 
 
 # encodedData=encodedData.tolist()
