@@ -107,26 +107,25 @@ def QRS_Features(signal):
 
 
     # Plotting
-    # qrs_result = np.array(qrs_result).reshape(-1, )
-    # time = np.arange(len(lowHighPass_Signal)) / samplingRate
-    # plt.figure(figsize=(12, 6))
-    # plt.subplot(121)
-    # plt.title("11 Points")
-    # plt.plot(time, lowHighPass_Signal, 'b')
-    # plt.plot(time[q_r_s_peaks], lowHighPass_Signal[q_r_s_peaks], 'ro')
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.subplot(122)
-    # plt.title("R Peak - Library")
-    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    # plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Amplitude')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+    time = np.arange(len(lowHighPass_Signal)) / samplingRate
+    plt.figure(figsize=(12, 6))
+    plt.subplot(121)
+    plt.title("11 Points")
+    plt.plot(time, lowHighPass_Signal, 'b')
+    plt.plot(time[q_r_s_peaks], lowHighPass_Signal[q_r_s_peaks], 'ro')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.subplot(122)
+    plt.title("R Peak")
+    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
     RR_Features = []
     for i in range(len(R) - 1):
