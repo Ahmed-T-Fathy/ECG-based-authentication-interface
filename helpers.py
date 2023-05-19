@@ -27,22 +27,6 @@ def butter_band_pass_filter(input_signal, low_cutoff, high_cutoff, sampling_rate
     return filtered
 
 
-# def butter_lowpass_filter(input_signal, low_cutoff, sampling_rate, order):
-#     nyqRate = 0.5 * sampling_rate
-#     normal_cutoff = low_cutoff / nyqRate
-#     # Get the filter coefficients
-#     numerator, denominator = butter(order, normal_cutoff, btype='low', analog=False)
-#     y = filtfilt(numerator, denominator, input_signal)
-#     return y
-#
-# def butter_highpass_filter(input_signal, high_cutoff, sampling_rate, order):
-#     nyqRate = 0.5 * sampling_rate
-#     normal_cutoff = high_cutoff / nyqRate
-#     # Get the filter coefficients
-#     numerator, denominator = butter(order, normal_cutoff, btype='high', analog=False)
-#     y = filtfilt(numerator, denominator, input_signal)
-#     return y
-
 def data_preprocessing(signals, low_cutoff, high_cutoff, sampling_rate, order):
     preprocessed = []
     for signal in signals:
@@ -101,47 +85,56 @@ def QRS_Features(signal):
                     if peak < 0:
                         break
             peaks_corrected_list.append(peak)
-        return np.asarray(peaks_corrected_list)
+        return np.array(peaks_corrected_list)
 
     R = R_correction(lowHighPass_Signal, R)
+    # listY=[]
+    # for r in R:
+    #     listY.append(lowHighPass_Signal[r])
+    # listY=sorted(listY,reverse=True)
+    # listY=listY[:3]
+    # correctR=[]
+    # sig=lowHighPass_Signal.tolist()
+    # for y in listY:
+    #     correctR.append(sig.index(y))
+    # R=correctR
 
-    qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
-    # points=biosppy.signals.ecg.getPPositions().ecg.getTPositions(signal=lowHighPass_Signal)
+
+    # qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
 
     # find q and s peaks by R peaks
-    q_r_s_peaks = extract_Q_S_peaks(lowHighPass_Signal, R, 50)
-
-    qrs_result = np.array(qrs_result).reshape(-1, )
+    q_r_s_peaks,Features = extract_Q_S_peaks(lowHighPass_Signal, R, 50)
 
 
     # Plotting
-    qrs_result = np.array(qrs_result).reshape(-1, )
-    time = np.arange(len(lowHighPass_Signal)) / samplingRate
-    plt.figure(figsize=(12, 6))
-    plt.subplot(121)
-    plt.title("QRS Algorithm - Khaled")
-    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    plt.plot(time[q_r_s_peaks], lowHighPass_Signal[q_r_s_peaks], 'ro', label='R Peaks')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.legend()
-    plt.grid(True)
-    plt.subplot(122)
-    plt.title("QRS Algorithm - Library")
-    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    plt.plot(time[qrs_result], lowHighPass_Signal[qrs_result], 'ro', label='R Peaks')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # qrs_result = np.array(qrs_result).reshape(-1, )
+    # time = np.arange(len(lowHighPass_Signal)) / samplingRate
+    # plt.figure(figsize=(12, 6))
+    # plt.subplot(121)
+    # plt.title("11 Points")
+    # plt.plot(time, lowHighPass_Signal, 'b')
+    # plt.plot(time[q_r_s_peaks], lowHighPass_Signal[q_r_s_peaks], 'ro')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Amplitude')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.subplot(122)
+    # plt.title("R Peak - Library")
+    # plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
+    # plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Amplitude')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
     RR_Features = []
-    for i in range(len(qrs_result) - 1):
-        RR_Features.append(qrs_result[i + 1] - qrs_result[i])
+    for i in range(len(R) - 1):
+        RR_Features.append(R[i + 1] - R[i])
     RR_Features = np.array(RR_Features)
 
-    return RR_Features
+
+    return Features
 
 
 def extract_features(signals, No_of_sampels, type):
@@ -158,6 +151,7 @@ def extract_features(signals, No_of_sampels, type):
 def extract_Q_S_peaks(signal, R, range):
     q_r_s_peaks = []
     signal = signal.tolist()
+    Features=[]
     p = q = s = t = p_on = t_on = p_off = t_off = qrs_on = qrs_off = -1
     for r in R:
         if ((r - range) > 0):
@@ -179,8 +173,8 @@ def extract_Q_S_peaks(signal, R, range):
             t = signal.index(max(signal[r + range:(r + 120)]))
 
             # get t_off
-            if ((r + 160) < len(signal)):
-                t_off = get_point_with_max_area(signal, t , t+ 40)
+            if ((r + 200) < len(signal)):
+                t_off = get_point_with_max_area(signal, t , t+ 100)
                 q_r_s_peaks.append(t_off)
             q_r_s_peaks.append(t)
 
@@ -198,8 +192,30 @@ def extract_Q_S_peaks(signal, R, range):
             q_r_s_peaks.append(t_on)
 
         q_r_s_peaks.append(r)
-
-    return q_r_s_peaks
+        if(p!=-1 and q!=-1 and  s!=-1 and  t !=-1 and  p_on !=-1 and  t_on !=-1 and  p_off !=-1 and  t_off !=-1 and  qrs_on !=-1 and  qrs_off!=-1):
+            Features.append(r-q) #RQ
+            Features.append(s-r) #SR
+            Features.append(p_off-p_on) #P-INTERVAL
+            Features.append(t_off-t_on) #T-INTERVAL
+            Features.append(q-p) #QP
+            Features.append(s-q) #SQ
+            Features.append(t-qrs_off) #TQRSOFF
+            Features.append(r-p_off) #RPOFF
+            Features.append(t_on-r) #TONR
+            Features.append(r-p) #RP
+            Features.append(t-r) #TR
+            Features.append(s-p) #SP
+            Features.append(t-q) #TQ
+            Features.append(r-p_on) #RPON
+            Features.append(t_off-r) #TOFFR
+            Features.append(q-p_on) #QPONN
+            Features.append(t_off-s) #TOFFS
+            Features.append(qrs_on-p_off) #QRSONPOFF
+            Features.append(t_on-qrs_off) #TONQRSOFF
+            Features.append(t_off-p_off) #TOFFPOFF
+            Features.append(t-p) #TP
+            #21Features
+    return q_r_s_peaks,Features
 
 
 def get_point_with_max_area(signal, p1, p2):
