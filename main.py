@@ -3,86 +3,68 @@ from sklearn.model_selection import train_test_split
 from sklearn import svm
 # first read data
 import numpy as np
+import pickle
 from matplotlib import pyplot as plt
 
 import helpers
 import read_data
 
+def testFromMain(type,x):
+    x = x.reshape(1,-1)
+    filename = ''
+    accuracy=-1
+    if type==1:
+        filename='modelnonFiducial.pkl'
+        accuracy=100
+    elif type==2:
+        filename = 'modelFiducial.pkl'
+    loaded_model = pickle.load(open(filename, 'rb'))
+    prediction = loaded_model.predict(x)
+    print(prediction)
+
+    return accuracy
+
+
 signals, labels = read_data.read_data('./Data sets 2/*', 1500)
 
-# preprocessing
-preprocessed_signals = helpers.data_preprocessing(signals, 1, 40, 500, 4)
 
 # label encoding
 LabelEncoder = preprocessing.LabelEncoder()
-encodedData = LabelEncoder.fit_transform(labels)
 
-# feature extraction
-filtered_signals = helpers.extract_features(preprocessed_signals, 1500,1)
+def Training(type):
+    encodedData = LabelEncoder.fit_transform(labels)
+    # train svm model
+    clf = svm.SVC(kernel='poly',degree=3, C=1)
+    #
+    #
+    # # save the model to disk
+    filename = 'modelFiducial.pkl'
 
-qrs=helpers.QRS_Features(signals[0])
+    preprocessed_signals=filtered_signals=[]
+    if type==1: #Non
+        # preprocessing
+        preprocessed_signals = helpers.data_preprocessing(signals, 1, 40, 500, 4)
+        # feature extraction
+        filtered_signals = helpers.extract_features(preprocessed_signals, 1500,1)
+        filename = 'modelnonFiducial.pkl'
+    elif type==2:
+        filtered_signals=helpers.extract_features(signals,1500,type)
+        encodedData,filtered_signals=helpers.editFeature(encodedData,filtered_signals,42)
+        filename = 'modelFiducial.pkl'
 
+    # split data
+    X_train, X_test, y_train, y_test = train_test_split(filtered_signals, encodedData, test_size=0.2,shuffle=True)
+    clf.fit(X_train, y_train)
 
-# encodedData=encodedData.tolist()
-# for i in range(len(filtered_signals)):
-#     if(i==len(filtered_signals)):
-#         break
-#     if(len(filtered_signals[i])==0):
-#         encodedData.remove(encodedData[i])
-#         # filtered_signals.remove(filtered_signals[i])
-#     else:
-#         filtered_signals[i]=filtered_signals[i][0:2]
-#
-# for i in range(len(filtered_signals)):
-#     if(i==len(filtered_signals)):
-#         break
-#     if(len(filtered_signals[i])==0):
-#         filtered_signals.remove(filtered_signals[i])
+    pickle.dump(clf, open(filename, 'wb'))
+    loaded_model = pickle.load(open(filename, 'rb'))
 
+    prediction =loaded_model.predict(X_test)
 
-# split data
-X_train, X_test, y_train, y_test = train_test_split(filtered_signals, encodedData, test_size=0.2,shuffle=True)
+    print('prediction:', prediction)
+    print('True:', y_test)
 
-# train svm model
-clf = svm.SVC(kernel='poly',degree=3, C=1)
+    accuracy=loaded_model.score(X_test,y_test)
+    print('Accuracy :', accuracy)
 
-
-# yTrain=[]
-# for i in range(len(y_train)):
-#     if(len(X_train[i])==3):
-#         yTrain.append(y_train[i])
-#
-# X_train=[x for x in X_train if len(x)==3]
-# y_train=yTrain
-#
-# xTrain=[]
-
-
-
-clf.fit(X_train, y_train)
-
-
-prediction =clf.predict(X_test)
-
-print('prediction:', prediction)
-print('True:', y_test)
-
-
-
-accuracy=clf.score(X_test,y_test)
-print('Accuracy :', accuracy)
-
-
-
-plt.figure(figsize=(12, 4))
-plt.subplot(131)
-plt.plot(signals[0])
-plt.subplot(132)
-plt.plot(preprocessed_signals[0])
-plt.title("Accuracy :"+str(accuracy))
-plt.subplot(133)
-plt.plot(filtered_signals[0])
-
-plt.show()
-
-# print((filtered_signals))
+# Training(2)

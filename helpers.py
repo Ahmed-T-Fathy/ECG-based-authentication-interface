@@ -26,7 +26,23 @@ def butter_band_pass_filter(input_signal, low_cutoff, high_cutoff, sampling_rate
     filtered = filtfilt(numerator, denominator, input_signal)
     return filtered
 
+def editFeature(encodedData,filtered_signals,numberFeatures):
+    encodedData = encodedData.tolist()
+    for i in range(len(filtered_signals)):
+        if (i == len(filtered_signals)):
+            break
+        if (len(filtered_signals[i]) == 0):
+            encodedData.remove(encodedData[i])
+            # filtered_signals.remove(filtered_signals[i])
+        else:
+            filtered_signals[i] = filtered_signals[i][0:numberFeatures]
 
+    for i in range(len(filtered_signals)):
+        if (i == len(filtered_signals)):
+            break
+        if (len(filtered_signals[i]) == 0):
+            filtered_signals.remove(filtered_signals[i])
+    return encodedData,filtered_signals
 def data_preprocessing(signals, low_cutoff, high_cutoff, sampling_rate, order):
     preprocessed = []
     for signal in signals:
@@ -50,12 +66,32 @@ def winIntegration(signal, samplingRate):
     return integratedSignal
 
 
+def R_correction(signal, peaks):
+
+    peaks_corrected_list = []
+    for index in range(peaks.shape[0]):
+        peak = peaks[index]  # Peak
+        if peak - 1 < 0:
+            break
+        if signal[peak] < signal[peak - 1]:
+            while signal[peak] < signal[peak - 1]:
+                peak -= 1
+                if peak < 0:
+                    break
+        elif signal[peak] < signal[peak + 1]:
+            while signal[peak] < signal[peak + 1]:
+                peak += 1
+                if peak < 0:
+                    break
+        peaks_corrected_list.append(peak)
+    return np.array(peaks_corrected_list)
+
 def QRS_Features(signal):
     lowCut = 1.0
     highCut = 40.0
     samplingRate = 500.0
 
-    signal = (signal - np.mean(signal)) / np.std(signal)
+    # signal = (signal - np.mean(signal)) / np.std(signal)
     # 1- Band Pass Filter
     lowHighPass_Signal = butter_band_pass_filter(signal, lowCut, highCut, samplingRate, 1)
     # 2- Differentation
@@ -67,74 +103,34 @@ def QRS_Features(signal):
     # 5- Trsehsold
     R = scipy.signal.find_peaks(intergratedSingal, height=np.mean(intergratedSingal), distance=0.2 * samplingRate)[0]
 
-    def R_correction(signal, peaks):
-
-        peaks_corrected_list = []
-        for index in range(peaks.shape[0]):
-            peak = peaks[index]  # Peak
-            if peak - 1 < 0:
-                break
-            if signal[peak] < signal[peak - 1]:
-                while signal[peak] < signal[peak - 1]:
-                    peak -= 1
-                    if peak < 0:
-                        break
-            elif signal[peak] < signal[peak + 1]:
-                while signal[peak] < signal[peak + 1]:
-                    peak += 1
-                    if peak < 0:
-                        break
-            peaks_corrected_list.append(peak)
-        return np.array(peaks_corrected_list)
-
     R = R_correction(lowHighPass_Signal, R)
-    # listY=[]
-    # for r in R:
-    #     listY.append(lowHighPass_Signal[r])
-    # listY=sorted(listY,reverse=True)
-    # listY=listY[:3]
-    # correctR=[]
-    # sig=lowHighPass_Signal.tolist()
-    # for y in listY:
-    #     correctR.append(sig.index(y))
-    # R=correctR
-
-
-    # qrs_result = ecg.christov_segmenter(signal=lowHighPass_Signal, sampling_rate=samplingRate)
 
     # find q and s peaks by R peaks
     q_r_s_peaks,Features = extract_Q_S_peaks(lowHighPass_Signal, R, 50)
 
+    return Features,q_r_s_peaks,lowHighPass_Signal
 
+def plotSignal(type,signal=[],preProc=[],DCT=[],QRSPOINTS=[]):
     # Plotting
-    time = np.arange(len(lowHighPass_Signal)) / samplingRate
-    plt.figure(figsize=(12, 6))
-    plt.subplot(121)
-    plt.title("11 Points")
-    plt.plot(time, lowHighPass_Signal, 'b')
-    plt.plot(time[q_r_s_peaks], lowHighPass_Signal[q_r_s_peaks], 'ro')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.legend()
-    plt.grid(True)
-    plt.subplot(122)
-    plt.title("R Peak")
-    plt.plot(time, lowHighPass_Signal, 'b', label='ECG Signal')
-    plt.plot(time[R], lowHighPass_Signal[R], 'ro', label='R Peaks')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-    RR_Features = []
-    for i in range(len(R) - 1):
-        RR_Features.append(R[i + 1] - R[i])
-    RR_Features = np.array(RR_Features)
-
-
-    return Features
-
+    if type==2:
+        time = np.arange(len(signal)) / 500 #SAMPLING RATE
+        plt.figure(figsize=(12, 6))
+        plt.title("11 Points")
+        plt.plot(time, signal, 'b')
+        plt.plot(time[QRSPOINTS], signal[QRSPOINTS], 'ro')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Amplitude')
+        plt.legend()
+        plt.show()
+    elif type==1:
+        plt.figure(figsize=(12, 4))
+        plt.subplot(131)
+        plt.plot(signal)
+        plt.subplot(132)
+        plt.plot(preProc)
+        plt.subplot(133)
+        plt.plot(DCT)
+        plt.show()
 
 def extract_features(signals, No_of_sampels, type):
     feature_extracted = []
@@ -143,7 +139,7 @@ def extract_features(signals, No_of_sampels, type):
             feature_extracted.append(get_DCT(signal, No_of_sampels))
     elif type == 2:
         for signal in signals:
-            feature_extracted.append(QRS_Features(signal))
+            feature_extracted.append(QRS_Features(signal)[0])
     return feature_extracted
 
 
@@ -172,7 +168,7 @@ def extract_Q_S_peaks(signal, R, range):
             t = signal.index(max(signal[r + range:(r + 120)]))
 
             # get t_off
-            if ((r + 200) < len(signal)):
+            if ((t + 100) < len(signal)):
                 t_off = get_point_with_max_area(signal, t , t+ 100)
                 q_r_s_peaks.append(t_off)
             q_r_s_peaks.append(t)
