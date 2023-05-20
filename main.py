@@ -20,9 +20,18 @@ def testFromMain(type,x):
         filename = 'modelFiducial.pkl'
     loaded_model = pickle.load(open(filename, 'rb'))
     prediction = loaded_model.predict(x)
-    print(prediction)
-
-    return accuracy
+    conf = loaded_model.decision_function(x)
+    conf=sorted(conf[0],reverse=True)
+    print(conf)
+    print("Difference: " + str(conf[0]-conf[1]))
+    print("Predict index:" + str(prediction))
+    textGUI=""
+    threshold=1.1
+    if conf[0]-conf[1]>=threshold:
+        textGUI="Authorized..!"
+    else:
+        textGUI="Not Authorized..!"
+    return textGUI
 
 
 signals, labels = read_data.read_data('./Data sets 2/*', 1500)

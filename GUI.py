@@ -20,6 +20,14 @@ def testData(path):
     print(labels)
     return labels
 
+def change_label(label):
+    color=""
+    if label=="Authorized..!":
+        color = "green"
+    elif label=="Not Authorized..!":
+        color="red"
+    accPerc.config(text=label, fg=color)
+
 testPredict=-1
 def runTest():
     if signalCombo.get()!='' and featuresCombo.get()!='':
@@ -43,6 +51,7 @@ def runTest():
             Features = helpers.get_DCT(preProcSignal[0], 1500)
             helpers.plotSignal(signal=un_filtered,preProc=preProcSignal[0],DCT=Features,type=type)
         testPredict=main.testFromMain(type,np.array(Features))
+        change_label(testPredict)
     else:
         print("YOU MUST CHOOSE FROM COMBOBOX........!")
 
@@ -71,13 +80,8 @@ featuresCombo.place(x=170, y=200)
 runButton = Button(mainWindow, text="Test Authentication",command=runTest) #command=dataFromGUI
 runButton.place(x=420, y=195,width=150)
 
-accLabel=Label(mainWindow,text="Accuracy: ",font=("Arial", 16))
-accLabel.place(x=40,y=250)
 
-accPerc=Label(mainWindow,text=f"{testPredict*100:.2f}%",font=("Arial", 16))
-accPerc.place(x=170,y=250)
-
-accPerc=Label(mainWindow,text="Authenticated..!",font=("Arial", 16), fg= "green")
-accPerc.place(x=420,y=250)
+accPerc=Label(mainWindow,text="PREDICT TEXT..!",font=("Arial", 16), fg= "green")
+accPerc.place(x=250,y=250)
 
 mainWindow.mainloop()
